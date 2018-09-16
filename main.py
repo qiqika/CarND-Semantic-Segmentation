@@ -56,9 +56,16 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    return None
+    input = tf.add(vgg_layer3_out, vgg_layer4_out)
+    input = tf.add(input, vgg_layer7_out)
+    input = tf.layers.conv2d_transpose(input, num_classes, 16, strides=(8, 8))
+    output = tf.layers.dense(input, num_classes)
+    return output
 tests.test_layers(layers)
 
+def add_gradient_summary(grad, var, collections=None):
+    if grad is not None:
+        tf.summary.histogram(var.op.name + "/gradient", grad, collections=collections)
 
 def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     """
@@ -70,7 +77,18 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
     # TODO: Implement function
-    return None, None, None
+    logits = tf.reshape(nn_last_layer, (-1, num_classes))
+
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, correct_label))
+   
+    optimizer = tf.train.AdamOptimizer(learning_rate) 
+    grads = optimizer.compute_gradients(cross_entropy_loss)
+    global_step = tf.Variable(0, name='global_step', trainable=False)
+    for grad, var in grads:
+        add_gradient_summary(grad, var, collections=['train'])
+        
+    train_op = optimizer.apply_gradients(grads, global_step=global_step)
+    return logits, train_op, cross_entropy_loss
 tests.test_optimize(optimize)
 
 
@@ -90,6 +108,17 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
+    for epoch in range(epochs):
+        epoch_loss = np.zeros((train_num,1),dtype = float)
+        batch_loss = 0.0
+        train_img, train_label = shuffle(input_image,  correct_label)
+        for offset in range(0, num_examples, BATCH_SIZE):
+            end = offset + BATCH_SIZE
+            batch_x, batch_y = X_train1[offset:end], y_train[offset:end]
+            _,batch_loss = sess.run([train_op,cross_entropy_loss], feed_dict={inputs: input_image, label:  correct_label})
+
+            epoch_loss[num_iters] = batch_loss 
+        probs = sess.run(softmax, {image_input: img, keep_prob: 1.0})
     pass
 tests.test_train_nn(train_nn)
 
