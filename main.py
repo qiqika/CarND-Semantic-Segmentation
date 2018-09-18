@@ -121,6 +121,36 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         probs = sess.run(softmax, {image_input: img, keep_prob: 1.0})
     pass
 tests.test_train_nn(train_nn)
+def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
+             correct_label, keep_prob, learning_rate):
+    """
+    Train neural network and print out the loss during training.
+    :param sess: TF Session
+    :param epochs: Number of epochs
+    :param batch_size: Batch size
+    :param get_batches_fn: Function to get batches of training data.  Call using get_batches_fn(batch_size)----
+    :param train_op: TF Operation to train the neural network
+    :param cross_entropy_loss: TF Tensor for the amount of loss
+    :param input_image: TF Placeholder for input images------
+    :param correct_label: TF Placeholder for label images----
+    :param keep_prob: TF Placeholder for dropout keep probability 
+    :param learning_rate: TF Placeholder for learning rate
+    """
+    # TODO: Implement function
+    
+    for epoch in range(epochs):
+        epoch_loss = np.zeros((train_num,1),dtype = float)
+        batch_loss = 0.0
+        train_img, train_label = shuffle(input_image,  correct_label)
+        get_batches_fn(batch_size)
+        for offset in range(batch_size):
+            
+            batch_x, batch_y = X_train1[offset:end], y_train[offset:end]
+            _,batch_loss = sess.run([train_op,cross_entropy_loss], feed_dict={image_input: batch_x, label:   batch_y, keep_prob: keep_prob,learning_rate:learning_rate})
+            epoch_loss[num_iters] = batch_loss 
+      
+    pass
+tests.test_train_nn(train_nn)
 
 
 def run():
