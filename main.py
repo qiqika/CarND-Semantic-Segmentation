@@ -41,7 +41,7 @@ def load_vgg(sess, vgg_path):
     layer3_out = sess.graph.get_tensor_by_name( vgg_layer3_out_tensor_name)
     layer4_out = sess.graph.get_tensor_by_name( vgg_layer4_out_tensor_name)
     layer7_out = sess.graph.get_tensor_by_name( vgg_layer7_out_tensor_name)
-
+    print("finish load")
     return image_input,keep_prob, layer3_out, layer4_out,layer7_out
 tests.test_load_vgg(load_vgg, tf)
 
@@ -56,10 +56,19 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    input = tf.add(vgg_layer3_out, vgg_layer4_out)
-    input = tf.add(input, vgg_layer7_out)
-    input = tf.layers.conv2d_transpose(input, num_classes, 16, strides=(8, 8))
-    output = tf.layers.dense(input, num_classes)
+    print(vgg_layer3_out)
+    conv8=tf.layers.conv2d(vgg_layer3_out,num_classes, 16, strides=(8, 8),kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    conv81=tf.layers.conv2d_transpose(conv8, num_classes,16, strides=(8, 8),kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    print(conv8)
+    print(vgg_layer4_out)
+    conv2=tf.layers.conv2d(vgg_layer3_out,num_classes, 4, strides=(2, 2),kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    conv21=tf.layers.conv2d_transpose(conv2, num_classes, 4, strides=(2, 2),kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    print(vgg_layer7_out)
+    conv1=tf.layers.conv2d(vgg_layer7_out,num_classes, 1, padding = 'same',kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    output = tf.layers.conv2d_transpose(conv1, num_classes, 4, 2, padding ='same',kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3))
+    
+
+
     return output
 tests.test_layers(layers)
 
@@ -99,27 +108,26 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param sess: TF Session
     :param epochs: Number of epochs
     :param batch_size: Batch size
-    :param get_batches_fn: Function to get batches of training data.  Call using get_batches_fn(batch_size)----
+    :param get_batches_fn: Function to get batches of training data.  Call using get_batches_fn(batch_size)
     :param train_op: TF Operation to train the neural network
     :param cross_entropy_loss: TF Tensor for the amount of loss
-    :param input_image: TF Placeholder for input images------
-    :param correct_label: TF Placeholder for label images----
-    :param keep_prob: TF Placeholder for dropout keep probability 
+    :param input_image: TF Placeholder for input images
+    :param correct_label: TF Placeholder for label images
+    :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
     """
     # TODO: Implement function
-    
     for epoch in range(epochs):
         epoch_loss = np.zeros((train_num,1),dtype = float)
         batch_loss = 0.0
         train_img, train_label = shuffle(input_image,  correct_label)
-        get_batches_fn(batch_size)
-        for offset in range(batch_size):
-            
+        for offset in range(0, num_examples, BATCH_SIZE):
+            end = offset + BATCH_SIZE
             batch_x, batch_y = X_train1[offset:end], y_train[offset:end]
-            _,batch_loss = sess.run([train_op,cross_entropy_loss], feed_dict={image_input: batch_x, label:   batch_y, keep_prob: keep_prob,learning_rate:learning_rate})
+            _,batch_loss = sess.run([train_op,cross_entropy_loss], feed_dict={inputs: input_image, label:  correct_label})
+
             epoch_loss[num_iters] = batch_loss 
-      
+        probs = sess.run(softmax, {image_input: img, keep_prob: 1.0})
     pass
 tests.test_train_nn(train_nn)
 
